@@ -4,11 +4,13 @@ Highest level classes for SpaceJam.
 
 import re
 #import math
+import random
 
 from direct.showbase.ShowBase import ShowBase
 from direct.task import Task
 from direct.task.Task import TaskManager
 from direct.interval.LerpInterval import LerpFunc
+from direct.interval.IntervalGlobal import Sequence
 from direct.particles.ParticleEffect import ParticleEffect
 from typing import Callable
 
@@ -127,6 +129,38 @@ class Orbiter(SphereCollideObj):
         self.modelNode.lookAt(self.staringAt.modelNode)
         
         return task.cont        
+    
+class Wanderer(SphereCollideObj):
+    numWanderers = 0
+
+    def __init__(self,
+                 loader: Loader, parentNode: NodePath,
+                 nodeName: str, modelPath: str, texPath: str, 
+                 hpr: Vec3, scaleVec: float,
+                 taskMgr: Task,
+                 centralObject: PlacedObject, orbitRadius: float, orbitType: str, staringAt: Vec3):
+        
+        super(Wanderer, self).__init__(loader, parentNode, nodeName, modelPath, Vec3(0,0,0), 3.2)
+        
+        self.taskManager = taskMgr
+        
+        self.modelNode.setTexture(loader.loadTexture(texPath), 1)
+        
+        self.modelNode.setHpr(hpr) 
+        self.modelNode.setScale(scaleVec)   
+        
+        self.orbitObject = centralObject
+        self.orbitRadius = orbitRadius
+        self.orbitType = orbitType
+        self.staringAt = staringAt
+        Wanderer.numOrbits += 1
+        
+        posInterval0 = self.modelNode.posInterval(20, Vec3(300, 6000, 500), startPos = Vec3(0,0,0))
+        posInterval1 = self.modelNode.posInterval(20, Vec3(700, -2000, 100), startPos = Vec3(300,6000,500))
+        posInterval2 = self.modelNode.posInterval(20, Vec3(0, -900, -1400), startPos = Vec3(700,-2000,100))
+        
+        self.travelRoute = Sequence(posInterval0, posInterval1, posInterval2, name = "Traveler")
+        self.travelRoute.loop()
                            
 class Player(CapsuleCollidableObject):
     def __init__(self,
@@ -394,6 +428,13 @@ class Player(CapsuleCollidableObject):
             print(f"{shooter} is DONE.")
             print(f"{victim} hit at {intoPosition}")
             self.droneDestroy(victim, intoPosition)
+        elif (strippedStr == "Planet"): #FIXME: Make sure this lines up to planet name
+            Missile.intervals[shooter].finish()
+            self.planetDestroy(victim)
+        elif (strippedStr == "Space Station"): #FIXME: Make sure this lines up to space station name
+            Missile.intervals[shooter].finish()
+            self.spaceStationDestroy(victim)
+            
         Missile.intervals[shooter].finish()
         
     def droneDestroy(self, hitId, hitPosition):
@@ -402,6 +443,42 @@ class Player(CapsuleCollidableObject):
         
         self.explodeNode.setPos(hitPosition)
         self.explode(hitPosition)
+        
+    def planetDestroy(self, victim: NodePath):
+        nodeID = self.render.find(victim)
+        
+        self.taskManager.add(self.planetShrink, name = "planetShrink", extraArgs = [nodeID], appendTask = True)
+
+    def SpaceStationDestroy(self, victim: NodePath):
+        nodeID = self.render.find(victim)
+        
+        self.taskManager.add(self.spaceStationShrink, name = "spaceStationShrink", extraArgs = [nodeID], appendTask = True)
+    
+    def planetShrink(self, nodeID: NodePath, task):
+        if task.time < 2.0:
+            if nodeID.getBounds().getRadius() > 0:
+                scaleSubtraction = 10
+                nodeID.setScale(nodeID.getScale() - scaleSubtraction)
+                temp = 30 * random.random()
+                nodeID.setH(nodeID.getH() + temp)
+                return task.cont
+            
+        else:
+            nodeID.detachNode()
+            return task.done
+
+    def spaceStationShrink(self, nodeID: NodePath, task):
+        if task.time < 2.0:
+            if nodeID.getBounds().getRadius() > 0:
+                scaleSubtraction = 10
+                nodeID.setScale(nodeID.getScale() - scaleSubtraction)
+                temp = 30 * random.random()
+                nodeID.setH(nodeID.getH() + temp)
+                return task.cont
+            
+        else:
+            nodeID.detachNode()
+            return task.done
         
     def explode(self, impactPoint):
         self.explosionCount += 1

@@ -91,7 +91,14 @@ class MyApp(ShowBase):
                                         (0, 0, 0), (10),
                                         self.taskMgr,
                                         centralObject=self.Planet5, orbitRadius=900, orbitType="cloud", staringAt=self.Player)  
-               
+        
+        #FIXME: reposition wanderer elsewhere
+        self.Wanderer1 = spaceJamClasses.Wanderer(self.loader, self.render, 
+                                        "Drone", "./Assets/Spaceships/DroneDefender/DroneDefender.obj", "./Assets/Spaceships/DroneDefender/octotoad1_auv.png", 
+                                        (0, 0, 0), (10),
+                                        self.taskMgr,
+                                        centralObject=self.Planet5, orbitRadius=900, orbitType="cloud", staringAt=self.Player)        
+                 
         fullCycle = 60 #Controls num drones to spawn
         for i in range(fullCycle): #Populates drones
             self.DrawCloudDefense(self.Planet1, 500)
