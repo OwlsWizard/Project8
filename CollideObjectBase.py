@@ -6,14 +6,14 @@ from panda3d.core import PandaNode, Loader, NodePath, CollisionNode, CollisionSp
 
 
 class PlacedObject(PandaNode):
-    #Generic node for Placed object
+    """Generic node for Placed object"""
     def __init__(self, loader: Loader, parentNode: NodePath, nodeName: str, modelPath: str):
         self.modelNode: NodePath = loader.loadModel(modelPath)
         self.modelNode.reparentTo(parentNode)
         self.modelNode.setName(nodeName)
                
 class CollidableObject(PlacedObject):
-    #adds colliders to PlacedObject
+    """adds colliders to PlacedObject"""
     def __init__(self, loader: Loader, parentNode: NodePath, nodeName: str, modelPath: str):
         super(CollidableObject, self).__init__(loader, parentNode, nodeName, modelPath)
         

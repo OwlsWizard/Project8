@@ -3,12 +3,9 @@ Highest level classes for SpaceJam.
 """
 
 import re
-#import math
 import random
 
-from direct.showbase.ShowBase import ShowBase
 from direct.task import Task
-from direct.task.Task import TaskManager
 from direct.interval.LerpInterval import LerpFunc
 from direct.interval.IntervalGlobal import Sequence
 from direct.particles.ParticleEffect import ParticleEffect
@@ -36,6 +33,7 @@ class Universe(InverseSphereCollideObj):
         self.modelNode.setHpr(hpr) 
         self.modelNode.setScale(scaleVec)    
 
+
 class Planet(SphereCollideObj):
     def __init__(self,
                  loader: Loader, parentNode: NodePath,
@@ -51,6 +49,7 @@ class Planet(SphereCollideObj):
         self.modelNode.setHpr(hpr) 
         self.modelNode.setScale(scaleVec)       
 
+
 class SpaceStation(CapsuleCollidableObject): 
     def __init__(self,
                  loader: Loader, parentNode: NodePath,
@@ -65,6 +64,7 @@ class SpaceStation(CapsuleCollidableObject):
         self.modelNode.setPos(posVec)
         self.modelNode.setHpr(hpr) 
         self.modelNode.setScale(scaleVec)      
+
 
 class Drone(CapsuleCollidableObject):
     
@@ -82,6 +82,7 @@ class Drone(CapsuleCollidableObject):
         self.modelNode.setPos(posVec)
         self.modelNode.setHpr(hpr) 
         self.modelNode.setScale(scaleVec)       
+
 
 class Orbiter(SphereCollideObj):
     numOrbits = 0
@@ -130,6 +131,7 @@ class Orbiter(SphereCollideObj):
         self.modelNode.lookAt(self.staringAt.modelNode)
         
         return task.cont        
+
     
 class Wanderer(SphereCollideObj):
     numWanderers = 0
@@ -156,15 +158,7 @@ class Wanderer(SphereCollideObj):
    
         self.routeName = f"{nodeName}Traveler"
         self.buildTravelRoute(self.routeName, position0, position1, position2, position3)
-        
-        """
-        posInterval0 = self.modelNode.posInterval(20, Vec3(0, 1000, 0), startPos = Vec3(-1000,0,0))
-        posInterval1 = self.modelNode.posInterval(20, Vec3(1000, 0, 0), startPos = Vec3(0, 1000, 0))
-        posInterval2 = self.modelNode.posInterval(20, Vec3(0, -1000, 0), startPos = Vec3(1000, 0, 0))
-        posInterval3 = self.modelNode.posInterval(20, Vec3(-1000, 0, 0), startPos = Vec3(0, -1000, 0))
-        """
-
-        
+            
     def buildTravelRoute(self, routeName, pos0, pos1, pos2, pos3):
         posInterval0 = self.modelNode.posInterval(20, pos1, startPos = pos0)
         posInterval1 = self.modelNode.posInterval(20, pos2, startPos = pos1)
@@ -172,7 +166,7 @@ class Wanderer(SphereCollideObj):
         posInterval3 = self.modelNode.posInterval(20, pos0, startPos = pos3)
 
         self.travelRoute = Sequence(posInterval0, posInterval1, posInterval2, posInterval3, name = routeName)
-        self.travelRoute.loop() #FIXME: Multiple Sequence errors, only 2nd is being executed (1st likely overwritten)          
+        self.travelRoute.loop()       
         
                            
 class Player(CapsuleCollidableObject):
@@ -205,188 +199,38 @@ class Player(CapsuleCollidableObject):
         self.missileBay = 1 #Num missiles that can be launched at one time
         self.taskManager.add(self.checkIntervals, "checkMissiles", 34)
         
-        self.explosionCount = 0 #num explosion particles
+        self.explosionCount = 0 #num explosions taking place
         self.explodeIntervals = {}
         
-        #ads logic to detect missile collisions
+        #adds logic to detect missile collisions
         self.handler.addInPattern("into")
         self.accept("into", self.handleInto)
         
-        self.turnRate = 0.5
+        self.turnRate = 0.5 #ship's turn speed
         self.shipSpeed = 5 #rate of movement
         
-        self.superBoostLength = 5.0
-        self.superBoostColldown = 5.0
-        
+        self.superBoostLength = 5.0 #Duration of super boost
+        self.superBoostColldown = 5.0 #cooldown length for super boost
         
         self.createInstructions()
         self.setKeybinds()
         self.setParicles()
 
-    def createInstructions(self):
-            self.instructionText = """
-            Welcome to Space Jam!!!\n
-            Try and destry as many things as you can!!!\n
-            Controls:\n
-            rotate left: a\n
-            rotate right: d\n
-            rotate up: w\n
-            rotate down: s\n
-            roll clockwise: right arrow\n
-            roll counterclockwise: left arrow\n
-            move forward: spacebar\n
-            super boost: shift, then spacebar to move forward\n
-            (lasts 5 seconds, has a 5 second cooldown)\n
-            hide/show instructions: i
-            """
-            self.Instructions = OnscreenText(text=self.instructionText, pos=(0, 0.9), scale=0.07, fg=(255, 255, 255, 1.0))
-            self.instructionsShowing = True
-
-    def setKeybinds(self): 
-        self.accept("space", self.thrust, [1])
-        self.accept("space-up", self.thrust, [0])
-        
-        self.accept("shift", self.superBoost, [1])
-        
-        self.accept("a", self.leftTurn, [1])
-        self.accept("a-up", self.leftTurn, [0])
-        
-        self.accept("d", self.rightTurn, [1])
-        self.accept("d-up", self.rightTurn, [0])
-        
-        self.accept("w", self.upTurn, [1])
-        self.accept("w-up", self.upTurn, [0])
-
-        self.accept("s", self.downTurn, [1])
-        self.accept("s-up", self.downTurn, [0])
-        
-        self.accept("arrow_left", self.leftRoll, [1])
-        self.accept("arrow_left-up", self.leftRoll, [0])
-
-        self.accept("arrow_right", self.rightRoll, [1])
-        self.accept("arrow_right-up", self.rightRoll, [0])
-        
-        self.accept("f", self.fire)
-        
-        self.accept("i", self.toggleInstructions, [1])
-    
-    def toggleInstructions(self, keyDown):
-        if keyDown and self.instructionsShowing == True: #toggles instructions off
-            self.Instructions.text = "Press i to show instructions"
-            self.instructionsShowing = False
-        elif keyDown and self.instructionsShowing == False:#toggles instructions on
-            self.Instructions.text = self.instructionText
-            self.instructionsShowing = True
-            
-    def thrust(self, keyDown):
-        if keyDown:
-            self.taskManager.add(self.applyThrust, "forward-thrust")
-        else:
-            self.taskManager.remove("forward-thrust")
-               
-    def superBoost(self, keyDown):
-        if (keyDown and (not self.taskManager.hasTaskNamed("superBoost"))):
-                self.shipSpeed = 15
-                self.taskManager.doMethodLater(0, self.addSuperBoost, 'superBoost')   
-                return Task.cont
-            
-    def leftTurn(self, keyDown):
-        if keyDown:
-            self.taskManager.add(self.applyLeftTurn, "left-turn")
-        else:
-            self.taskManager.remove("left-turn")
-            #print(self.modelNode.getHpr())
-    
-    def rightTurn(self, keyDown):
-        if keyDown:
-            self.taskManager.add(self.applyRightTurn, "right-turn")
-        else:
-            self.taskManager.remove("right-turn")
-            #print(self.modelNode.getHpr())    
-
-    def upTurn(self, keyDown):
-        if keyDown:
-            self.taskManager.add(self.applyUpTurn, "up-turn")
-        else:
-            self.taskManager.remove("up-turn")
-            #print(self.modelNode.getHpr())
-    
-    def downTurn(self, keyDown):
-        if keyDown:
-            self.taskManager.add(self.applyDownTurn, "down-turn")
-        else:
-            self.taskManager.remove("down-turn")
-            #print(self.modelNode.getHpr())
-            
-    def leftRoll(self, keyDown):
-        if keyDown:
-            self.taskManager.add(self.applyLeftRoll, "left-roll")
-        else:
-            self.taskManager.remove("left-roll")
-            #print(self.modelNode.getHpr())                   
-
-    def rightRoll(self, keyDown):
-        if keyDown:
-            self.taskManager.add(self.applyRightRoll, "right-roll")
-        else:
-            self.taskManager.remove("right-roll")
-            #print(self.modelNode.getHpr())    
-                
-    def applyThrust(self, task):
-        
-        trajectory = self.render.getRelativeVector(self.modelNode, Vec3.forward()) #Pulls direction ship is facing
-        """
-        FIXME: If trajectory is set to self.modelNode, then the ship will fly forward regardless of the direction the camera is facing.
-        unknown cause, passing in a seperate renderer like is implemented now seems to fix the issue.
-        """
-        trajectory.normalize()
-        self.modelNode.setFluidPos(self.modelNode.getPos() + trajectory * self.shipSpeed) #controls movement itself
-        return Task.cont
-    
-    def addSuperBoost(self, task): 
-        """
-        adds the task for superBoost
-        """
-        if (task.time > self.superBoostLength):
-            self.shipSpeed = 5
-            if (task.time > self.superBoostColldown + self.superBoostLength):
-                #print ("super boost ready!")
-                return Task.done 
-                 
-            elif (task.time <= self.superBoostColldown + self.superBoostLength):
-                #print ("Super boost recharging")
-                return Task.cont
-        
-        elif task.time <= self.superBoostLength:
-            #print("Super boost going!")
-            return Task.cont       
-        
-    def applyLeftTurn(self, task):
-        self.modelNode.setH(self.modelNode.getH() + self.turnRate)
-        return Task.cont
-    
-    def applyRightTurn(self, task):
-        self.modelNode.setH(self.modelNode.getH() + -self.turnRate)
-        return Task.cont
-    
-    def applyUpTurn(self, task):
-        self.modelNode.setP(self.modelNode.getP() + self.turnRate)
-        return Task.cont
-  
-    def applyDownTurn(self, task):
-        self.modelNode.setP(self.modelNode.getP() + -self.turnRate)
-        return Task.cont
-    
-    def applyLeftRoll(self, task): 
-        self.modelNode.setR(self.modelNode.getR() + -self.turnRate)
+    def checkIntervals(self, task):
+        for i in Missile.intervals:
+            if not Missile.intervals[i].isPlaying():
+                Missile.cNodes[i].detachNode()
+                Missile.fireModels[i].detachNode()
+                del Missile.intervals[i]
+                del Missile.fireModels[i]
+                del Missile.cNodes[i]
+                del Missile.collisionSolids[i]
+                print(i + " Has reached end of fire solution.")
+                break
         return Task.cont
 
-    def applyRightRoll(self, task): 
-        self.modelNode.setR(self.modelNode.getR() + self.turnRate)
-        return Task.cont      
-      
     def handleInto(self, entry):
-        pattern = r"[0-9]" #used to remove numberic charachters from string
+        pattern = r"[0-9]" #used to remove numeric characters from string
         
         fromNode = entry.getFromNodePath().getName()
         intoNode = entry.getIntoNodePath().getName()
@@ -424,7 +268,6 @@ class Player(CapsuleCollidableObject):
         self.explodeNode.setPos(hitPosition)
         self.explode(hitPosition)
         
-        
     def planetDestroy(self, victim: NodePath):
         nodeID = self.render.find(victim)
         
@@ -444,7 +287,6 @@ class Player(CapsuleCollidableObject):
                 temp = 30 * random.random()
                 nodeID.setH(nodeID.getH() + temp)
                 return task.cont
-            
         else:
             nodeID.detachNode()
             return task.done
@@ -458,7 +300,6 @@ class Player(CapsuleCollidableObject):
                 temp = 30 * random.random()
                 nodeID.setH(nodeID.getH() + temp)
                 return task.cont
-            
         else:
             nodeID.detachNode()
             return task.done
@@ -469,7 +310,6 @@ class Player(CapsuleCollidableObject):
         tag = f"particles-{str(self.explosionCount)}"
         
         self.explodeIntervals[tag] = LerpFunc(self.explodeLight, fromData=0, toData=1, duration=4.0, extraArgs=[impactPoint])
-        #shorted above animation so no secondary explosion occurs 
         #Above Builds animation for explosion
         self.explodeIntervals[tag].start()
     
@@ -486,7 +326,148 @@ class Player(CapsuleCollidableObject):
         self.explodeEffect.loadConfig("./Assets/Part-Efx/basic_xpld_efx.ptf")
         self.explodeEffect.setScale(20)
         self.explodeNode = self.render.attachNewNode("ExplosionEffects")
+
+    def createInstructions(self):
+            self.instructionText = """
+            Welcome to Space Jam!!!\n
+            Try and destry as many things as you can!!!\n
+            Controls:\n
+            rotate left: a\n
+            rotate right: d\n
+            rotate up: w\n
+            rotate down: s\n
+            roll clockwise: right arrow\n
+            roll counterclockwise: left arrow\n
+            move forward: spacebar\n
+            super boost: shift, then spacebar to move forward\n
+            (lasts 5 seconds, has a 5 second cooldown)\n
+            hide/show instructions: i
+            """
+            self.Instructions = OnscreenText(text=self.instructionText, pos=(0.0, 0.9), scale=0.07, fg=(255, 255, 255, 1.0))
+            self.instructionsShowing = True
+
+    def setKeybinds(self): 
+        self.accept("space", self.thrust, [1])
+        self.accept("space-up", self.thrust, [0])
         
+        self.accept("shift", self.superBoost, [1])
+        
+        self.accept("a", self.leftTurn, [1])
+        self.accept("a-up", self.leftTurn, [0])
+        
+        self.accept("d", self.rightTurn, [1])
+        self.accept("d-up", self.rightTurn, [0])
+        
+        self.accept("w", self.upTurn, [1])
+        self.accept("w-up", self.upTurn, [0])
+
+        self.accept("s", self.downTurn, [1])
+        self.accept("s-up", self.downTurn, [0])
+        
+        self.accept("arrow_left", self.leftRoll, [1])
+        self.accept("arrow_left-up", self.leftRoll, [0])
+
+        self.accept("arrow_right", self.rightRoll, [1])
+        self.accept("arrow_right-up", self.rightRoll, [0])
+        
+        self.accept("f", self.fire)
+        
+        self.accept("i", self.toggleInstructions, [1])
+                
+    def thrust(self, keyDown):
+        if keyDown:
+            self.taskManager.add(self.applyThrust, "forward-thrust")
+        else:
+            self.taskManager.remove("forward-thrust")
+            
+    def applyThrust(self, task):
+        
+        trajectory = self.render.getRelativeVector(self.modelNode, Vec3.forward()) #Pulls direction ship is facing
+        """
+        FIXME: If trajectory is set to self.modelNode, then the ship will fly forward regardless of the direction the camera is facing.
+        unknown cause, passing in a seperate renderer like is implemented now seems to fix the issue.
+        """
+        trajectory.normalize()
+        self.modelNode.setFluidPos(self.modelNode.getPos() + trajectory * self.shipSpeed) #controls movement itself
+        return Task.cont
+                   
+    def superBoost(self, keyDown):
+        if (keyDown and (not self.taskManager.hasTaskNamed("superBoost"))):
+                self.shipSpeed = 15
+                self.taskManager.doMethodLater(0, self.addSuperBoost, 'superBoost')   
+                return Task.cont
+
+    def addSuperBoost(self, task): 
+        """adds the task for superBoost"""
+        if (task.time > self.superBoostLength):
+            self.shipSpeed = 5
+            if (task.time > self.superBoostColldown + self.superBoostLength):
+                return Task.done 
+            elif (task.time <= self.superBoostColldown + self.superBoostLength):
+                return Task.cont
+        elif task.time <= self.superBoostLength:
+            return Task.cont   
+            
+    def leftTurn(self, keyDown):
+        if keyDown:
+            self.taskManager.add(self.applyLeftTurn, "left-turn")
+        else:
+            self.taskManager.remove("left-turn")
+            
+    def applyLeftTurn(self, task):
+        self.modelNode.setH(self.modelNode.getH() + self.turnRate)
+        return Task.cont
+        
+    def rightTurn(self, keyDown):
+        if keyDown:
+            self.taskManager.add(self.applyRightTurn, "right-turn")
+        else:
+            self.taskManager.remove("right-turn") 
+            
+    def applyRightTurn(self, task):
+        self.modelNode.setH(self.modelNode.getH() + -self.turnRate)
+        return Task.cont
+
+    def upTurn(self, keyDown):
+        if keyDown:
+            self.taskManager.add(self.applyUpTurn, "up-turn")
+        else:
+            self.taskManager.remove("up-turn")
+            
+    def applyUpTurn(self, task):
+        self.modelNode.setP(self.modelNode.getP() + self.turnRate)
+        return Task.cont    
+    
+    def downTurn(self, keyDown):
+        if keyDown:
+            self.taskManager.add(self.applyDownTurn, "down-turn")
+        else:
+            self.taskManager.remove("down-turn")
+            
+    def applyDownTurn(self, task):
+        self.modelNode.setP(self.modelNode.getP() + -self.turnRate)
+        return Task.cont
+                
+    def leftRoll(self, keyDown):
+        if keyDown:
+            self.taskManager.add(self.applyLeftRoll, "left-roll")
+        else:
+            self.taskManager.remove("left-roll")
+                              
+    def applyLeftRoll(self, task): 
+        self.modelNode.setR(self.modelNode.getR() + -self.turnRate)
+        return Task.cont
+
+    def rightRoll(self, keyDown):
+        if keyDown:
+            self.taskManager.add(self.applyRightRoll, "right-roll")
+        else:
+            self.taskManager.remove("right-roll")   
+            
+    def applyRightRoll(self, task): 
+        self.modelNode.setR(self.modelNode.getR() + self.turnRate)
+        return Task.cont       
+                                        
     def fire(self):
         if self.missileBay:
             travelRate = self.missileDistance #might be able to remove
@@ -532,20 +513,13 @@ class Player(CapsuleCollidableObject):
             print("reload processing....")
             return Task.cont
             
-    def checkIntervals(self, task):
-        for i in Missile.intervals:
-            if not Missile.intervals[i].isPlaying():
-                Missile.cNodes[i].detachNode()
-                Missile.fireModels[i].detachNode()
-                del Missile.intervals[i]
-                del Missile.fireModels[i]
-                del Missile.cNodes[i]
-                del Missile.collisionSolids[i]
-                print(i + " Has reached end of fire solution.")
-                break
-        return Task.cont
-
-
+    def toggleInstructions(self, keyDown):
+        if keyDown and self.instructionsShowing == True: #toggles instructions off
+            self.Instructions.text = "Press i to show instructions"
+            self.instructionsShowing = False
+        elif keyDown and self.instructionsShowing == False:#toggles instructions on
+            self.Instructions.text = self.instructionText
+            self.instructionsShowing = True
              
   
 class Missile(SphereCollideObj):

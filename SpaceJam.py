@@ -10,26 +10,25 @@ import DefensePaths as defensePaths
 class MyApp(ShowBase): 
     def __init__(self):
         ShowBase.__init__(self)
-        
-        self.cTrav = CollisionTraverser()
-        self.cTrav.traverse(self.render)
-        self.pusher = CollisionHandlerPusher() #Creates pusher for when two objects touch
-        
+        self.buildCTrav()
         self.setupScene()
         self.setCollisions()
         self.setCamera()
         self.setHUD()
+    
+    def buildCTrav(self):
+        self.cTrav = CollisionTraverser()
+        self.cTrav.traverse(self.render)
+        self.pusher = CollisionHandlerPusher() #Creates pusher for when two objects touch
               
     def setupScene(self):
-        self.buildCelestialBodies()
-                  
         self.Player = spaceJamClasses.Player(self.loader, self.render, 
                                              "Spaceship","./Assets/Spaceships/theBorg/theBorg.x",  
                                              "./Assets/Spaceships/theBorg/small_space_ship_2_color.jpg", 
                                              (0,0,0), (0,0,0), (0.75),
                                              self.taskMgr, self.render, self.accept, 
                                              self.cTrav) 
-        
+        self.buildCelestialBodies()
         self.buildDrones()
                      
     def buildCelestialBodies(self):
@@ -97,7 +96,9 @@ class MyApp(ShowBase):
                                         (0, 0, 0), (10),
                                         self.taskMgr,
                                         self.Player,
-                                        Vec3(-1000,0,0), Vec3(0,1000,0), Vec3(1000,0,0), Vec3(0,-1000,0))   
+                                        Vec3(-1000,0,0), Vec3(0,1000,0), Vec3(1000,0,0), Vec3(0,-1000,0))
+        #FIXME: Wanderer1, in particular, does not have the primary explosion upon first impact. 
+        #Secondary works fine so animation is loading, but isn't showing for this particular drone. 
              
         self.Wanderer2 = spaceJamClasses.Wanderer(self.loader, self.render, 
                                 self.UpdateDroneCount(), "./Assets/Spaceships/DroneDefender/DroneDefender.obj", "./Assets/Spaceships/DroneDefender/octotoad1_auv.png", 
@@ -117,7 +118,12 @@ class MyApp(ShowBase):
             self.DrawXYRing(self.SpaceStation, circlePosition, 80)
             self.DrawYZRing(self.SpaceStation, circlePosition, 80)
             self.DrawXZRing(self.SpaceStation, circlePosition, 80)
-                        
+
+    def UpdateDroneCount(self):
+        spaceJamClasses.Drone.droneCount += 1
+        nickName = "Drone" + str(spaceJamClasses.Drone.droneCount)
+        return nickName
+                           
     def DrawCloudDefense(self, centralObject, radius):
         droneName = self.UpdateDroneCount()
         unitVec = defensePaths.cloud()
@@ -164,11 +170,6 @@ class MyApp(ShowBase):
                     droneName, "./Assets/Spaceships/DroneDefender/DroneDefender.x", "./Assets/Spaceships/DroneDefender/octotoad1_auv.png", 
                     positionXZ, (0,0,0), 1.0) 
         
-    def UpdateDroneCount(self):
-        spaceJamClasses.Drone.droneCount += 1
-        nickName = "Drone" + str(spaceJamClasses.Drone.droneCount)
-        return nickName
-    
     def setCollisions(self):    
         self.pusher.addCollider(self.Player.collisionNode, self.Player.modelNode)
         self.cTrav.add_collider(self.Player.collisionNode,self.pusher)
