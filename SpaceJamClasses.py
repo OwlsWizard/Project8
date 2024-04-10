@@ -152,9 +152,9 @@ class Wanderer(SphereCollideObj):
 
         self.staringAt = staringAt
         Wanderer.numWanderers += 1
-        print(nodeName)
-        
-        self.buildTravelRoute(position0, position1, position2, position3)
+   
+        self.routeName = f"{nodeName}Traveler"
+        self.buildTravelRoute(self.routeName, position0, position1, position2, position3)
         
         """
         posInterval0 = self.modelNode.posInterval(20, Vec3(0, 1000, 0), startPos = Vec3(-1000,0,0))
@@ -164,14 +164,13 @@ class Wanderer(SphereCollideObj):
         """
 
         
-    def buildTravelRoute(self, pos0, pos1, pos2, pos3):
-        
+    def buildTravelRoute(self, routeName, pos0, pos1, pos2, pos3):
         posInterval0 = self.modelNode.posInterval(20, pos1, startPos = pos0)
         posInterval1 = self.modelNode.posInterval(20, pos2, startPos = pos1)
         posInterval2 = self.modelNode.posInterval(20, pos3, startPos = pos2)
         posInterval3 = self.modelNode.posInterval(20, pos0, startPos = pos3)
 
-        self.travelRoute = Sequence(posInterval0, posInterval1, posInterval2, posInterval3, name = "Traveler")
+        self.travelRoute = Sequence(posInterval0, posInterval1, posInterval2, posInterval3, name = routeName)
         self.travelRoute.loop() #FIXME: Multiple Sequence errors, only 2nd is being executed (1st likely overwritten)          
         
                            
@@ -388,7 +387,7 @@ class Player(CapsuleCollidableObject):
             
         Missile.intervals[shooter].finish()
         
-    def droneDestroy(self, hitId, hitPosition): #FIXME: Wanderer Drones are not showing the initial explosion animation.
+    def droneDestroy(self, hitId, hitPosition):
         nodeID = self.render.find(hitId)
         nodeID.detachNode()
         
@@ -407,6 +406,7 @@ class Player(CapsuleCollidableObject):
         self.taskManager.add(self.spaceStationShrink, name = "spaceStationShrink", extraArgs = [nodeID], appendTask = True)
     
     def planetShrink(self, nodeID: NodePath, task):
+        print(f"PlanetShrink nodeID: {nodeID}")
         if task.time < 2.0:
             if nodeID.getBounds().getRadius() > 0:
                 scaleSubtraction = 10
@@ -418,8 +418,9 @@ class Player(CapsuleCollidableObject):
         else:
             nodeID.detachNode()
             return task.done
-
+        
     def spaceStationShrink(self, nodeID: NodePath, task):
+        print(f"spaceStationShrink nodeID: {nodeID}")
         if task.time < 2.0:
             if nodeID.getBounds().getRadius() > 0:
                 scaleSubtraction = 2
