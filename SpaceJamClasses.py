@@ -250,9 +250,6 @@ class Player(CapsuleCollidableObject):
                 self.taskManager.doMethodLater(0, self.addSuperBoost, 'superBoost')   
                 return Task.cont
             
-      
-    
-                      
     def leftTurn(self, keyDown):
         if keyDown:
             self.taskManager.add(self.applyLeftTurn, "left-turn")
@@ -323,6 +320,7 @@ class Player(CapsuleCollidableObject):
         elif task.time <= self.superBoostLength:
             #print("Super boost going!")
             return Task.cont       
+        
     #FIXME: Old methods for relative direction error at odd angles. Scraped for now, might try to reimplement later. 
     """
     def applyLeftTurn(self, task):
@@ -422,6 +420,7 @@ class Player(CapsuleCollidableObject):
         tempVar = intoNode.split("_")
         victim = tempVar[0]
         strippedStr = re.sub(pattern, "", victim)
+        print(f"Stripped String: {strippedStr}")
 
         print(f"fromNode: {fromNode}")
         print(f"intoNode: {intoNode}")
@@ -430,10 +429,10 @@ class Player(CapsuleCollidableObject):
             print(f"{shooter} is DONE.")
             print(f"{victim} hit at {intoPosition}")
             self.droneDestroy(victim, intoPosition)
-        elif (strippedStr == "Planet"): #FIXME: Make sure this lines up to planet name
+        elif (strippedStr == "Planet"): 
             Missile.intervals[shooter].finish()
             self.planetDestroy(victim)
-        elif (strippedStr == "Space Station"): #FIXME: Make sure this lines up to space station name
+        elif (strippedStr == "SpaceStation"): #FIXME: Make sure this lines up to space station name
             Missile.intervals[shooter].finish()
             self.spaceStationDestroy(victim)
             
@@ -446,12 +445,13 @@ class Player(CapsuleCollidableObject):
         self.explodeNode.setPos(hitPosition)
         self.explode(hitPosition)
         
+        
     def planetDestroy(self, victim: NodePath):
         nodeID = self.render.find(victim)
         
         self.taskManager.add(self.planetShrink, name = "planetShrink", extraArgs = [nodeID], appendTask = True)
 
-    def SpaceStationDestroy(self, victim: NodePath):
+    def spaceStationDestroy(self, victim: NodePath):
         nodeID = self.render.find(victim)
         
         self.taskManager.add(self.spaceStationShrink, name = "spaceStationShrink", extraArgs = [nodeID], appendTask = True)
@@ -472,7 +472,7 @@ class Player(CapsuleCollidableObject):
     def spaceStationShrink(self, nodeID: NodePath, task):
         if task.time < 2.0:
             if nodeID.getBounds().getRadius() > 0:
-                scaleSubtraction = 10
+                scaleSubtraction = 2
                 nodeID.setScale(nodeID.getScale() - scaleSubtraction)
                 temp = 30 * random.random()
                 nodeID.setH(nodeID.getH() + temp)
@@ -484,6 +484,7 @@ class Player(CapsuleCollidableObject):
         
     def explode(self, impactPoint):
         self.explosionCount += 1
+        print ("Drone Exploded!")
         tag = f"particles-{str(self.explosionCount)}"
         
         self.explodeIntervals[tag] = LerpFunc(self.explodeLight, fromData=0, toData=1, duration=2.0, extraArgs=[impactPoint])
