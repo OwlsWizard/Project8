@@ -97,7 +97,16 @@ class MyApp(ShowBase):
                                         self.UpdateDroneCount(), "./Assets/Spaceships/DroneDefender/DroneDefender.obj", "./Assets/Spaceships/DroneDefender/octotoad1_auv.png", 
                                         (0, 0, 0), (10),
                                         self.taskMgr,
-                                        centralObject=self.Planet5, orbitRadius=900, orbitType="cloud", staringAt=self.Player)        
+                                        self.Player,
+                                        Vec3(-1000,0,0), Vec3(0,1000,0), Vec3(1000,0,0), Vec3(0,-1000,0))   
+             
+        self.Wanderer2 = spaceJamClasses.Wanderer(self.loader, self.render, 
+                                self.UpdateDroneCount(), "./Assets/Spaceships/DroneDefender/DroneDefender.obj", "./Assets/Spaceships/DroneDefender/octotoad1_auv.png", 
+                                (0, 0, 0), (10),
+                                self.taskMgr,
+                                self.Player,
+                                Vec3(-2000,0,0), Vec3(0,2000,0), Vec3(2000,0,0), Vec3(0,-2000,0))   
+        
                  
         fullCycle = 60 #Controls num drones to spawn
         for i in range(fullCycle): #Populates drones

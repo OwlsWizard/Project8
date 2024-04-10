@@ -138,7 +138,8 @@ class Wanderer(SphereCollideObj):
                  nodeName: str, modelPath: str, texPath: str, 
                  hpr: Vec3, scaleVec: float,
                  taskMgr: Task,
-                 centralObject: PlacedObject, orbitRadius: float, orbitType: str, staringAt: Vec3):
+                 staringAt: Vec3,
+                 position0: Vec3, position1: Vec3, position2: Vec3, position3: Vec3):
         
         super(Wanderer, self).__init__(loader, parentNode, nodeName, modelPath, Vec3(0,0,0), 3.2)
         
@@ -148,21 +149,31 @@ class Wanderer(SphereCollideObj):
         
         self.modelNode.setHpr(hpr) 
         self.modelNode.setScale(scaleVec)   
-        
-        self.orbitObject = centralObject
-        self.orbitRadius = orbitRadius
-        self.orbitType = orbitType
+
         self.staringAt = staringAt
         Wanderer.numWanderers += 1
         print(nodeName)
         
+        self.buildTravelRoute(position0, position1, position2, position3)
+        
+        """
         posInterval0 = self.modelNode.posInterval(20, Vec3(0, 1000, 0), startPos = Vec3(-1000,0,0))
         posInterval1 = self.modelNode.posInterval(20, Vec3(1000, 0, 0), startPos = Vec3(0, 1000, 0))
         posInterval2 = self.modelNode.posInterval(20, Vec3(0, -1000, 0), startPos = Vec3(1000, 0, 0))
         posInterval3 = self.modelNode.posInterval(20, Vec3(-1000, 0, 0), startPos = Vec3(0, -1000, 0))
+        """
+
         
+    def buildTravelRoute(self, pos0, pos1, pos2, pos3):
+        
+        posInterval0 = self.modelNode.posInterval(20, pos1, startPos = pos0)
+        posInterval1 = self.modelNode.posInterval(20, pos2, startPos = pos1)
+        posInterval2 = self.modelNode.posInterval(20, pos3, startPos = pos2)
+        posInterval3 = self.modelNode.posInterval(20, pos0, startPos = pos3)
+
         self.travelRoute = Sequence(posInterval0, posInterval1, posInterval2, posInterval3, name = "Traveler")
-        self.travelRoute.loop()
+        self.travelRoute.loop() #FIXME: Multiple Sequence errors, only 2nd is being executed (1st likely overwritten)          
+        
                            
 class Player(CapsuleCollidableObject):
     def __init__(self,
@@ -321,67 +332,6 @@ class Player(CapsuleCollidableObject):
             #print("Super boost going!")
             return Task.cont       
         
-    #FIXME: Old methods for relative direction error at odd angles. Scraped for now, might try to reimplement later. 
-    """
-    def applyLeftTurn(self, task):
-        rotation = self.modelNode.getHpr()
-        vector = self.pullVectorLR(rotation)
-        vectorX = vector[0]
-        vectorY = vector[1]
-        self.modelNode.setHpr(self.modelNode.getH() + vectorX, self.modelNode.getP() + vectorY, self.modelNode.getR())
-        return Task.cont    
-    
-    def applyRightTurn(self, task):
-        rotation = self.modelNode.getHpr()
-        vector = self.pullVectorLR(rotation)
-        vectorX = vector[0]
-        vectorY = vector[1]
-        self.modelNode.setHpr(self.modelNode.getH() - vectorX, self.modelNode.getP() - vectorY, self.modelNode.getR())
-        return Task.cont    
-
-    def applyUpTurn(self, task):
-        rotation = self.modelNode.getHpr()
-        vector = self.pullVectorUD(rotation)
-        vectorX = vector[0] 
-        vectorY = vector[1] 
-        self.modelNode.setHpr(self.modelNode.getH() + vectorX, self.modelNode.getP() + vectorY, self.modelNode.getR())
-        return Task.cont   
-
-    def applyDownTurn(self, task):
-        rotation = self.modelNode.getHpr()
-        vector = self.pullVectorUD(rotation)
-        vectorX = vector[0] 
-        vectorY = vector[1] 
-        self.modelNode.setHpr(self.modelNode.getH() - vectorX, self.modelNode.getP() - vectorY, self.modelNode.getR())
-        return Task.cont   
-
-    #FIXME: Need logic to determine if ship is up or down relative to world (180 <= x < 270 is cutoff for directions reversed, inclusive)
-    def pullVectorLR(self, hpr: Vec3):
-        
-        Pulls XZ vectors to increase in movement direction for left, right movement, and returns as a list in format [x,y]. 
-        Needed to fix movement issues where tilting "left" tilts ship left relative to world, not the ship itself
-        
-        rotation = hpr[2]
-        relativeX = self.turnRate * math.cos(math.radians(rotation))
-        relativeY = self.turnRate * math.sin(math.radians(rotation))
-        cordinateList = [relativeX, relativeY]
-        
-        return cordinateList
-    
-    def pullVectorUD(self, hpr: Vec3):
-        
-        Pulls XZ vector to increase in movement direction for Up, Down movement, abd returns as a list in format [x,z]. 
-        Needed to fix movement issues where tilting "up" tilts ship up relative to world, not the ship itself.
-        
-        rotation = hpr[2] + 90
-        relativeX = self.turnRate * math.cos(math.radians(rotation))
-        relativeY = self.turnRate * math.sin(math.radians(rotation))
-        cordinateList = [relativeX, relativeY]
-        
-        return cordinateList
-    """
-
-    #OLD METHODS FOR TURNING
     def applyLeftTurn(self, task):
         self.modelNode.setH(self.modelNode.getH() + self.turnRate)
         return Task.cont
@@ -432,13 +382,13 @@ class Player(CapsuleCollidableObject):
         elif (strippedStr == "Planet"): 
             Missile.intervals[shooter].finish()
             self.planetDestroy(victim)
-        elif (strippedStr == "SpaceStation"): #FIXME: Make sure this lines up to space station name
+        elif (strippedStr == "SpaceStation"):
             Missile.intervals[shooter].finish()
             self.spaceStationDestroy(victim)
             
         Missile.intervals[shooter].finish()
         
-    def droneDestroy(self, hitId, hitPosition):
+    def droneDestroy(self, hitId, hitPosition): #FIXME: Wanderer Drones are not showing the initial explosion animation.
         nodeID = self.render.find(hitId)
         nodeID.detachNode()
         
@@ -487,12 +437,13 @@ class Player(CapsuleCollidableObject):
         print ("Drone Exploded!")
         tag = f"particles-{str(self.explosionCount)}"
         
-        self.explodeIntervals[tag] = LerpFunc(self.explodeLight, fromData=0, toData=1, duration=2.0, extraArgs=[impactPoint])
+        self.explodeIntervals[tag] = LerpFunc(self.explodeLight, fromData=0, toData=1, duration=4.0, extraArgs=[impactPoint])
         #shorted above animation so no secondary explosion occurs 
         #Above Builds animation for explosion
         self.explodeIntervals[tag].start()
     
     def explodeLight(self, time, explodePosition):
+        #print(f"ExplodePosition: {explodePosition}")
         if (time == 1.0 and self.explodeEffect): #If 1 second has passed, and there is an explosion taking place
             self.explodeEffect.disable()
         elif time == 0:
