@@ -12,6 +12,7 @@ from direct.task.Task import TaskManager
 from direct.interval.LerpInterval import LerpFunc
 from direct.interval.IntervalGlobal import Sequence
 from direct.particles.ParticleEffect import ParticleEffect
+from direct.gui.OnscreenText import OnscreenText
 from typing import Callable
 
 from CollideObjectBase import *
@@ -217,9 +218,29 @@ class Player(CapsuleCollidableObject):
         self.superBoostLength = 5.0
         self.superBoostColldown = 5.0
         
+        
+        self.createInstructions()
         self.setKeybinds()
         self.setParicles()
 
+    def createInstructions(self):
+            self.instructionText = """
+            Welcome to Space Jam!!!\n
+            Try and destry as many things as you can!!!\n
+            Controls:\n
+            rotate left: a\n
+            rotate right: d\n
+            rotate up: w\n
+            rotate down: s\n
+            roll clockwise: right arrow\n
+            roll counterclockwise: left arrow\n
+            move forward: spacebar\n
+            super boost: shift, then spacebar to move forward\n
+            (lasts 5 seconds, has a 5 second cooldown)\n
+            hide/show instructions: i
+            """
+            self.Instructions = OnscreenText(text=self.instructionText, pos=(0, 0.9), scale=0.07, fg=(255, 255, 255, 1.0))
+            self.instructionsShowing = True
 
     def setKeybinds(self): 
         self.accept("space", self.thrust, [1])
@@ -246,8 +267,17 @@ class Player(CapsuleCollidableObject):
         self.accept("arrow_right-up", self.rightRoll, [0])
         
         self.accept("f", self.fire)
+        
+        self.accept("i", self.toggleInstructions, [1])
     
-       
+    def toggleInstructions(self, keyDown):
+        if keyDown and self.instructionsShowing == True: #toggles instructions off
+            self.Instructions.text = "Press i to show instructions"
+            self.instructionsShowing = False
+        elif keyDown and self.instructionsShowing == False:#toggles instructions on
+            self.Instructions.text = self.instructionText
+            self.instructionsShowing = True
+            
     def thrust(self, keyDown):
         if keyDown:
             self.taskManager.add(self.applyThrust, "forward-thrust")
@@ -482,8 +512,6 @@ class Player(CapsuleCollidableObject):
             
             Missile.intervals[tag] = CurrentMissile.modelNode.posInterval(2.0, travelVec, startPos = posVec, fluid = 1) #fluid = 1 checks for collisions b/t frames
             Missile.intervals[tag].start()
-            
-            
         else:
             if not self.taskManager.hasTaskNamed("reload"):
                 print("init reload..." )
