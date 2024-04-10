@@ -94,7 +94,7 @@ class MyApp(ShowBase):
         
         #FIXME: reposition wanderer elsewhere
         self.Wanderer1 = spaceJamClasses.Wanderer(self.loader, self.render, 
-                                        "Drone", "./Assets/Spaceships/DroneDefender/DroneDefender.obj", "./Assets/Spaceships/DroneDefender/octotoad1_auv.png", 
+                                        "Wanderer1", "./Assets/Spaceships/DroneDefender/DroneDefender.obj", "./Assets/Spaceships/DroneDefender/octotoad1_auv.png", 
                                         (0, 0, 0), (10),
                                         self.taskMgr,
                                         centralObject=self.Planet5, orbitRadius=900, orbitType="cloud", staringAt=self.Player)        

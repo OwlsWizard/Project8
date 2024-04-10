@@ -33,4 +33,5 @@ class CapsuleCollidableObject(CollidableObject):
     def __init__(self, loader: Loader, parentNode: NodePath, nodeName: str, modelPath: str, ax:float, ay:float, az:float, bx:float, by:float, bz:float, r:float):
         super(CapsuleCollidableObject, self).__init__(loader, parentNode, nodeName, modelPath)
         self.collisionNode.node().add_solid(CollisionCapsule(ax,ay,az,bx,by,bz,r))
+        
              

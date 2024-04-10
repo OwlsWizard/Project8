@@ -153,13 +153,15 @@ class Wanderer(SphereCollideObj):
         self.orbitRadius = orbitRadius
         self.orbitType = orbitType
         self.staringAt = staringAt
-        Wanderer.numOrbits += 1
+        Wanderer.numWanderers += 1
+        print(nodeName)
         
-        posInterval0 = self.modelNode.posInterval(20, Vec3(300, 6000, 500), startPos = Vec3(0,0,0))
-        posInterval1 = self.modelNode.posInterval(20, Vec3(700, -2000, 100), startPos = Vec3(300,6000,500))
-        posInterval2 = self.modelNode.posInterval(20, Vec3(0, -900, -1400), startPos = Vec3(700,-2000,100))
+        posInterval0 = self.modelNode.posInterval(20, Vec3(0, 1000, 0), startPos = Vec3(-1000,0,0))
+        posInterval1 = self.modelNode.posInterval(20, Vec3(1000, 0, 0), startPos = Vec3(0, 1000, 0))
+        posInterval2 = self.modelNode.posInterval(20, Vec3(0, -1000, 0), startPos = Vec3(1000, 0, 0))
+        posInterval3 = self.modelNode.posInterval(20, Vec3(-1000, 0, 0), startPos = Vec3(0, -1000, 0))
         
-        self.travelRoute = Sequence(posInterval0, posInterval1, posInterval2, name = "Traveler")
+        self.travelRoute = Sequence(posInterval0, posInterval1, posInterval2, posInterval3, name = "Traveler")
         self.travelRoute.loop()
                            
 class Player(CapsuleCollidableObject):
