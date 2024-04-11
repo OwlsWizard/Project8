@@ -97,8 +97,6 @@ class MyApp(ShowBase):
                                         self.taskMgr,
                                         self.Player,
                                         Vec3(-1000,0,0), Vec3(0,1000,0), Vec3(1000,0,0), Vec3(0,-1000,0))
-        #FIXME: Wanderer1, in particular, does not have the primary explosion upon first impact. 
-        #Secondary works fine so animation is loading, but isn't showing for this particular drone. 
              
         self.Wanderer2 = spaceJamClasses.Wanderer(self.loader, self.render, 
                                 self.UpdateDroneCount(), "./Assets/Spaceships/DroneDefender/DroneDefender.obj", "./Assets/Spaceships/DroneDefender/octotoad1_auv.png", 

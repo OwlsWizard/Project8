@@ -225,7 +225,7 @@ class Player(CapsuleCollidableObject):
                 del Missile.fireModels[i]
                 del Missile.cNodes[i]
                 del Missile.collisionSolids[i]
-                print(i + " Has reached end of fire solution.")
+                #print(i + " Has reached end of fire solution.")
                 break
         return Task.cont
 
@@ -243,14 +243,14 @@ class Player(CapsuleCollidableObject):
         tempVar = intoNode.split("_")
         victim = tempVar[0]
         strippedStr = re.sub(pattern, "", victim)
-        print(f"Stripped String: {strippedStr}")
+        #print(f"Stripped String: {strippedStr}")
 
-        print(f"fromNode: {fromNode}")
-        print(f"intoNode: {intoNode}")
+        #print(f"fromNode: {fromNode}")
+        #print(f"intoNode: {intoNode}")
         
         if (strippedStr == "Drone"):
-            print(f"{shooter} is DONE.")
-            print(f"{victim} hit at {intoPosition}")
+            #print(f"{shooter} is DONE.")
+            #print(f"{victim} hit at {intoPosition}")
             self.droneDestroy(victim, intoPosition)
         elif (strippedStr == "Planet"): 
             Missile.intervals[shooter].finish()
@@ -279,7 +279,6 @@ class Player(CapsuleCollidableObject):
         self.taskManager.add(self.spaceStationShrink, name = "spaceStationShrink", extraArgs = [nodeID], appendTask = True)
     
     def planetShrink(self, nodeID: NodePath, task):
-        print(f"PlanetShrink nodeID: {nodeID}")
         if task.time < 2.0:
             if nodeID.getBounds().getRadius() > 0:
                 scaleSubtraction = 10
@@ -292,10 +291,9 @@ class Player(CapsuleCollidableObject):
             return task.done
         
     def spaceStationShrink(self, nodeID: NodePath, task):
-        print(f"spaceStationShrink nodeID: {nodeID}")
         if task.time < 2.0:
             if nodeID.getBounds().getRadius() > 0:
-                scaleSubtraction = 2
+                scaleSubtraction = 0.008
                 nodeID.setScale(nodeID.getScale() - scaleSubtraction)
                 temp = 30 * random.random()
                 nodeID.setH(nodeID.getH() + temp)
@@ -306,7 +304,6 @@ class Player(CapsuleCollidableObject):
         
     def explode(self, impactPoint):
         self.explosionCount += 1
-        print ("Drone Exploded!")
         tag = f"particles-{str(self.explosionCount)}"
         
         self.explodeIntervals[tag] = LerpFunc(self.explodeLight, fromData=0, toData=1, duration=4.0, extraArgs=[impactPoint])
@@ -314,7 +311,7 @@ class Player(CapsuleCollidableObject):
         self.explodeIntervals[tag].start()
     
     def explodeLight(self, time, explodePosition):
-        #print(f"ExplodePosition: {explodePosition}")
+
         if (time == 1.0 and self.explodeEffect): #If 1 second has passed, and there is an explosion taking place
             self.explodeEffect.disable()
         elif time == 0:
@@ -475,13 +472,8 @@ class Player(CapsuleCollidableObject):
             aim.normalize()
             fireSolution = aim * travelRate
             inFront = aim * 150 
-            """
-            FIXME:
-            With current implementation, the missles will not blow up drones right next to the ship, 
-            as the missile will spawn past these drones. Can resize all drones to be larger than missle, or can make missile larger.
-            In either case, a problem for cleanup during final build.
-            """
-            travelVec = fireSolution + self.modelNode.getPos() #FIXME: COuld getPos() fix my relative movement issues?
+
+            travelVec = fireSolution + self.modelNode.getPos()
             
             self.missileBay -= 1
             tag = "missile " + str(Missile.missileCount)
@@ -495,14 +487,14 @@ class Player(CapsuleCollidableObject):
             Missile.intervals[tag].start()
         else:
             if not self.taskManager.hasTaskNamed("reload"):
-                print("init reload..." )
+                #print("init reload..." )
                 self.taskManager.doMethodLater(0, self.reload, 'reload')   
                 return Task.cont
             
     def reload(self, task):
         if task.time > self.reloadTime:
             self.missileBay += 1
-            print("Reload complete")
+            #print("Reload complete")
             
             if self.missileBay > 1:
                 self.missileBay = 1
@@ -510,7 +502,7 @@ class Player(CapsuleCollidableObject):
             return Task.done
         
         elif task.time <= self.reloadTime:
-            print("reload processing....")
+            #print("reload processing....")
             return Task.cont
             
     def toggleInstructions(self, keyDown):
@@ -542,4 +534,4 @@ class Missile(SphereCollideObj):
         
         Missile.collisionSolids[nodeName] = self.collisionNode.node().getSolid(0)
         Missile.cNodes[nodeName].show()
-        print("Fired torpedo #" + str(Missile.missileCount))
+        #print("Fired torpedo #" + str(Missile.missileCount))
